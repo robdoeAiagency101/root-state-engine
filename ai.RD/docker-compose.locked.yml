@@ -1,0 +1,323 @@
+version: "3.9"
+
+# DIGITAL ECOSYSTEM LOCK
+# Time, identity, state, resources, and restart behaviour are invariants.
+# No drift permitted at the container/orchestration layer.
+
+services:
+  tron-engine:
+    image: my/tron-engine:latest
+    
+    # IDENTITY LOCK: e14 (UID 10014, GID 10014)
+    user: "10014:10014"
+    
+    # TIME LOCK: Share host time, no per-container NTP
+    ipc: host                      # Shared memory for time source coordination
+    cap_drop:
+      - SYS_TIME                   # Cannot change system time
+      - SYS_NICE                   # Cannot adjust scheduling priority
+    
+    # STATE & WITNESS LOCK: Persistent volumes, no ephemeral wipe
+    volumes:
+      - tron_state:/var/lib/tron:rw
+      - tron_logs:/var/log/tron:rw
+      - audit_log:/var/log/audit:rw    # Append-only audit witness
+      - /etc/localtime:/etc/localtime:ro  # Host time anchor
+      - /etc/timezone:/etc/timezone:ro
+    
+    # RESOURCE LOCK: Reserved CPU + bounded limits
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.8"              # Reserved capacity (predictable under load)
+          memory: 384M             # Guaranteed minimum
+    
+    # RESTART LOCK: Always recover after any failure or reboot
+    restart: always
+    restart_policy:
+      condition: on-failure
+      delay: 5s
+      max_attempts: 0              # Unlimited retries
+      window: 60s
+    
+    # HEALTH LOCK: Prove liveness of time anchor tick
+    healthcheck:
+      test: ["CMD", "test", "-f", "/var/lib/tron/.tick_witness"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    
+    environment:
+      - TZ=UTC                      # Pinned timezone
+      - TICK_GRID_INDEX_START=1     # Time anchor lower bound
+      - TICK_GRID_INDEX_MAX=7200    # Time anchor upper bound
+    
+    networks:
+      - ecosystem                   # Explicit network for coordination
+    
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"              # Prevent log volume explosion
+
+  sun-node:
+    image: my/sun-node:latest
+    
+    # IDENTITY LOCK
+    user: "10014:10014"
+    
+    # TIME LOCK: Must sync with TRON via shared time source
+    ipc: service:tron-engine       # Shared IPC with TRON for tight time coordination
+    cap_drop:
+      - SYS_TIME
+      - SYS_NICE
+    
+    # STATE & WITNESS LOCK
+    volumes:
+      - sun_state:/var/lib/sun-node:rw
+      - audit_log:/var/log/audit:rw
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    
+    # RESOURCE LOCK: Same tier as TRON for symmetric timing
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.8"
+          memory: 384M
+    
+    # RESTART LOCK
+    restart: always
+    restart_policy:
+      condition: on-failure
+      delay: 5s
+      max_attempts: 0
+      window: 60s
+    
+    # HEALTH LOCK: Verify time anchor canonical truth object (CTO)
+    healthcheck:
+      test: ["CMD", "test", "-f", "/var/lib/sun-node/.cto_witness"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    
+    environment:
+      - TZ=UTC
+      - MASTER_TIME_ANCHOR=true    # CTO root designation
+    
+    depends_on:
+      tron-engine:
+        condition: service_healthy  # Wait for TRON health, not just container start
+    
+    networks:
+      - ecosystem
+    
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  zha-orchestrator:
+    image: my/zha-orchestrator:latest
+    
+    # IDENTITY LOCK
+    user: "10014:10014"
+    
+    # TIME LOCK: Reads from TRON (no independent time source)
+    cap_drop:
+      - SYS_TIME
+      - SYS_NICE
+    
+    # STATE & WITNESS LOCK: Device registry persists across restarts
+    volumes:
+      - zha_state:/var/lib/zha:rw
+      - audit_log:/var/log/audit:rw
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    
+    # RESOURCE LOCK: Bounded but reliable
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.3"
+          memory: 192M
+    
+    # RESTART LOCK
+    restart: always
+    restart_policy:
+      condition: on-failure
+      delay: 5s
+      max_attempts: 0
+      window: 60s
+    
+    # HEALTH LOCK: Verify device registry state
+    healthcheck:
+      test: ["CMD", "test", "-f", "/var/lib/zha/.registry_witness"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    
+    environment:
+      - TZ=UTC
+      - TICK_SOURCE=tron-engine    # Explicit time source dependency
+    
+    depends_on:
+      tron-engine:
+        condition: service_healthy
+      sun-node:
+        condition: service_healthy
+    
+    networks:
+      - ecosystem
+    
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  dashboard-api:
+    image: my/dashboard-api:latest
+    
+    # IDENTITY LOCK
+    user: "10014:10014"
+    
+    # SECURITY & AUTH LOCK: Token + role-based access
+    cap_drop:
+      - NET_RAW                    # Cannot create raw sockets
+      - NET_ADMIN
+      - SYS_MODULE
+    
+    # STATE & WITNESS LOCK: Logs + audit trail
+    volumes:
+      - api_logs:/var/log/api:rw
+      - audit_log:/var/log/audit:rw
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    
+    # RESOURCE LOCK: Bounded to prevent noisy neighbour
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+    
+    # RESTART LOCK
+    restart: always
+    restart_policy:
+      condition: on-failure
+      delay: 5s
+      max_attempts: 0
+      window: 60s
+    
+    # HEALTH LOCK
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    
+    environment:
+      - TZ=UTC
+      - API_TOKEN_FILE=/run/secrets/api_token
+      - AUDIT_LOG_PATH=/var/log/audit/api.log
+    
+    # SECURITY: Secrets read from Docker secrets (in-memory, never on disk)
+    secrets:
+      - api_token
+    
+    depends_on:
+      tron-engine:
+        condition: service_healthy
+      zha-orchestrator:
+        condition: service_healthy
+      sun-node:
+        condition: service_healthy
+    
+    networks:
+      - ecosystem
+    
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  # STATE & WITNESS LOCKS: Persistent across container lifecycle
+  tron_state:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/ecosystem/tron_state    # Host-level persistence
+  
+  tron_logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/ecosystem/tron_logs
+  
+  sun_state:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/ecosystem/sun_state
+  
+  zha_state:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/ecosystem/zha_state
+  
+  api_logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/ecosystem/api_logs
+  
+  # AUDIT LOCK: Append-only witness log for all containers
+  audit_log:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/ecosystem/audit_log
+
+# SECURITY LOCK: Secrets stored in Docker's in-memory secret store
+secrets:
+  api_token:
+    file: ./secrets/api_token
+
+# NETWORK LOCK: Isolated ecosystem network (no external cross-talk by default)
+networks:
+  ecosystem:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
+    driver_opts:
+      com.docker.network.driver.mtu: 1500  # Stable MTU (predictable fragmentation)
