@@ -1,7 +1,9 @@
 ﻿{
-    "project_codename":  "LUCY x DEEPSEEK-N",
-    "qr_target":  "https://robdoe.com",
+    "portal_target":  "https://robdoe.com",
+    "status":  "EXPANDING_WITHOUT_LIMIT",
     "equation":  "x_{n+1} = x_n^2 + c",
-    "status":  "OMNIPRESENT_ROBDOE_ANCHORED",
-    "timestamp_utc":  "2026-09-07T21:00:13.6177644Z"
+    "timestamp_utc":  "2026-09-07T21:02:49.3114397Z",
+    "repositories_woven":  "ALL (UNBOUNDED)",
+    "expansion_mode":  "OPEN_INFINITE_NON_CLOSING",
+    "project_codename":  "LUCY x DEEPSEEK-N"
 }
