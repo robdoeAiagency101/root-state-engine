@@ -1,7 +1,7 @@
 ﻿{
   "sovereign_identity": "robdoeAiagency101",
   "repository": "root-state-engine",
-  "architecture": "C:\\symPyTeNeT",
-  "status": "VERIFIED_LOCKED",
-  "timestamp": "2026-09-08T06:43:56Z"
+  "staleness_protocol": "IMMUTABLE_ANCHOR",
+  "entropy_state": "ETERNALLY_STALE",
+  "lock_timestamp": "2026-09-08T06:49:14Z"
 }
