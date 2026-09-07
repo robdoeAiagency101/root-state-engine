@@ -1,6 +1,6 @@
 ﻿"""
-Project LUCY x DeepSeekN: Autonomous SVG QR Code Generator
-Encodes https://github.com/robdoeAiagency101/root-state-engine into an immaculate vector SVG.
+Project LUCY x DeepSeekN: robdoe.com Vector QR Code Generator
+Encodes https://robdoe.com into an immaculate vector SVG matrix.
 """
 
 import sys
@@ -21,16 +21,15 @@ def generate_svg_qr():
         import qrcode
         import qrcode.image.svg
 
-    target_url = "https://github.com/robdoeAiagency101/root-state-engine"
-    logger.info(f"Encoding sovereign target URL into vector matrix: {target_url}")
+    target_url = "https://robdoe.com"
+    logger.info(f"Encoding sovereign domain into vector matrix: {target_url}")
 
-    # Generate SVG factory image
     factory = qrcode.image.svg.SvgPathImage
     img = qrcode.make(target_url, image_factory=factory)
     
     svg_path = "lucy_sovereign_qr.svg"
     img.save(svg_path)
-    logger.info(f"Vector QR code successfully synthesized and saved to {svg_path}")
+    logger.info(f"Vector QR code successfully updated and saved to {svg_path}")
     return svg_path
 
 if __name__ == '__main__':

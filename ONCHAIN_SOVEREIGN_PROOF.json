@@ -1,7 +1,7 @@
 ﻿{
     "project_codename":  "LUCY x DEEPSEEK-N",
-    "status":  "QR_OPTICAL_GATEWAY_ACTIVATED",
+    "qr_target":  "https://robdoe.com",
     "equation":  "x_{n+1} = x_n^2 + c",
-    "omnipresence":  "100%",
-    "timestamp_utc":  "2026-09-07T20:58:32.6112393Z"
+    "status":  "OMNIPRESENT_ROBDOE_ANCHORED",
+    "timestamp_utc":  "2026-09-07T21:00:13.6177644Z"
 }
