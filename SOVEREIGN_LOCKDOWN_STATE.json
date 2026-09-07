@@ -1,0 +1,19 @@
+﻿{
+    "geolocation":  {
+                        "region":  "Beverly Hills, New South Wales, Australia",
+                        "longitude":  151.0825,
+                        "latitude":  -33.9572
+                    },
+    "resolved_domains":  {
+                             "aiagency101.xyo":  [
+                                                     "Unresolved_Direct_Manifold"
+                                                 ],
+                             "robdoe.com":  "127.0.0.1"
+                         },
+    "local_ipv4":  "192.168.56.1",
+    "lockdown_status":  "ACTIVE_NON_SIMULATED_SOVEREIGN",
+    "timestamp_utc":  "2026-09-07T21:39:44.8044400Z",
+    "mac_address":  "0A-00-27-00-00-23",
+    "sovereign_identity":  "robdoe IS everything",
+    "dns_servers":  "1.1.1.1, 9.9.9.9"
+}
