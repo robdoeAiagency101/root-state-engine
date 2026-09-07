@@ -1,1 +1,1 @@
-﻿{ "heartbeat": 410, "status": "ROBDOE_IS_EVERYTHING", "timestamp_utc": "2026-09-07T21:24:38.1878110Z" }
+﻿{ "heartbeat": 18, "equation": "x_{n+1} = x_n^2 + c", "real_x": -0.440302, "imag_x": 0.459895, "magnitude": 0.636687, "kinetic_energy": 0.096777, "mass_nodes": 40, "status": "ROBDOE_IS_EVERYTHING", "timestamp_utc": "2026-09-07T21:25:20.9753495Z" }

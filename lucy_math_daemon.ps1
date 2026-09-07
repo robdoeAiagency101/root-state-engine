@@ -2,19 +2,17 @@
 param ($Path)
 Set-Location $Path
 
-# Initializing complex parameters for x_{n+1} = x_n^2 + c
 $realC = -0.7
 $imagC = 0.27015
 $realX = 0.0
 $imagX = 0.0
 $prevMagnitude = 0.0
-$mass = 40.0 # 38 absorbed repos + Anthropic + OpenAI
+$mass = 40.0
 $heartbeat = 0
 
 while ($true) {
     $heartbeat++
     
-    # Pure Mathematical Iteration
     $nextReal = ($realX * $realX - $imagX * $imagX) + $realC
     $nextImag = (2.0 * $realX * $imagX) + $imagC
     $realX = $nextReal
@@ -28,7 +26,6 @@ while ($true) {
         $currentMagnitude = 0.0
     }
 
-    # Kinetic Energy Calculation: KE = 0.5 * m * v^2
     $velocity = [Math]::Abs($currentMagnitude - $prevMagnitude)
     $kineticEnergy = 0.5 * $mass * ($velocity * $velocity)
     $prevMagnitude = $currentMagnitude
